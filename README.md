@@ -1,4 +1,4 @@
-# my-dotfiles
+# My Dotfiles - MacOs
 
 Mi configuración de shell, scripts y proyectos pequeños. Pensado para que en una máquina nueva baste con clonar y ejecutar un instalador.
 
