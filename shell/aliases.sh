@@ -33,7 +33,7 @@ alias ports-all="sudo lsof -i -P -n +c 0 | column -t"
 # Requires https://github.com/caarlos0/timer to be installed
 
 # Mac setup for pomo
-alias work="timer -n 'Working 🧑🏻‍💻' 6s  && terminal-notifier -message 'Pomodoro'\
+alias work="timer -n 'Working 🧑🏻‍💻' 60m  && terminal-notifier -message 'Pomodoro'\
         -title 'Work Timer is up! Take a Break 😊'\
         -sound Crystal"
         
