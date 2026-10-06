@@ -1,0 +1,167 @@
+add_newline = true
+
+format = """
+$os\
+$battery\
+$hostname\
+$localip\
+$sudo
+$directory\
+$git_branch\
+$git_status\
+$git_metrics\
+$package\
+$nodejs\
+$golang\
+$rust\
+$python\
+$docker_context\
+$cmd_duration\
+$line_break\
+$character"""
+
+
+[os]
+disabled = false
+style = 'fg:#a3aed2'
+format = '[$symbol ]($style)'
+
+[username]
+show_always = true
+style_user = "(fg:#a3aed2)"
+style_root = 'bold red'
+format = '[$user](fg:#a3aed2)'
+disabled = false
+aliases = { "corpuser034g" = "matchai" }
+
+[time]
+disabled = false
+time_format = "%R"         # Hour:Minute Format
+format = '[ $time](fg:#a0a9cb bg:#252c36)'
+
+
+
+[directory]
+# style = "fg:#cae3e3 bold bg:#111827"
+format = "$path"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[git_branch]
+symbol = "  "
+# style = "fg:#fee2e2 bold bg:#111827"
+# style = "bg:#fee2e2"
+style = "bg:#111827"
+format = '[$symbol$branch(:$remote_branch)]($style)'
+
+[git_commit]
+commit_hash_length = 4
+tag_symbol = '🔖 '
+format = '[\($hash$tag\)]($style) '
+
+[git_status]
+style = ''
+# format = '$all_status'
+format = '|$conflicted$stashed$deleted$renamed$staged$modified$untracked|'
+stashed = '📦|'
+staged = '[+${count}](green)|'
+modified = '[!${count}](yellow)|'
+untracked = '[?${count}](red)'
+# ~/.config/starship.toml
+
+[git_metrics]
+disabled = false
+added_style = 'bold blue'
+format = '[+$added]($added_style)/[-$deleted]($deleted_style)|'
+
+
+[nodejs]
+symbol = ' '
+# style = 'fg:#41c45d'
+format = "via [$symbol]($style)$version"
+
+[python]
+symbol = '🐍'
+style = "fg:#41c45d"
+# format = "[$symbol($version)($pyenv_version_name)]($style)"
+format = ' [([venv•](fg:#ffffff)\($virtualenv\))](fg:#a0c936) via[${symbol}${pyenv_prefix}(${version})]($style)'
+
+[rust]
+symbol = "🦀"
+style = 'fg:#E82B35 bold'
+format = 'via-[$symbol($version) ]($style)'
+
+[golang]
+symbol = ""
+format = '[ $symbol( $version) ](fg:#458588)'
+
+[cmd_duration]
+format = '\[[⏱ $duration]($style)\]'
+
+[docker_context]
+symbol = '🐳'
+format = '[ $symbol](blue bold)'
+detect_files = ['docker-compose.yml', 'docker-compose.yaml', 'Dockerfile']
+style = 'blue bold'
+
+[sudo]
+style = 'bold green'
+symbol = ' '
+disabled = false
+format = '[ as $symbol]($style)'
+
+
+[battery]
+full_symbol = ' 🔋'
+charging_symbol = ' 󰁹'
+discharging_symbol = ' 󰁹'
+
+[[battery.display]] # 'bold red' style and discharging_symbol when capacity is between 0% and 15%
+threshold = 15
+style = 'bold red'
+
+[hostname]
+ssh_only = true
+# ssh_symbol = '🌏 '
+# format = '[$ssh_symbol](bold blue)[$hostname](fg:#090c0c bg:#a3aed2)'
+format = '[$ssh_symbol](bold blue)$hostname:'
+trim_at = '.companyname.com'
+disabled = false
+
+
+[package]
+symbol = "📦"
+format = ' is-[$symbol$version](208) '
+
+[localip]
+ssh_only = true
+format = "@[$localipv4](bold magenta)"
+disabled = false
+
+
+[os.symbols]
+Windows = "󰍲"
+Ubuntu = "󰕈"
+SUSE = ""
+Raspbian = "󰐿"
+Mint = "󰣭"
+Macos = "󰀵"
+Manjaro = ""
+Linux = "󰌽"
+Gentoo = "󰣨"
+Fedora = "󰣛"
+Alpine = ""
+Amazon = ""
+Android = ""
+Arch = "󰣇"
+Artix = "󰣇"
+CentOS = ""
+Debian = "󰣚"
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"

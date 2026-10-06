@@ -1,0 +1,27 @@
+[user]
+	name = Daniel Santos
+	email = danielsantosqc.dev@gmail.com
+[init]
+	defaultBranch = main
+[pull]
+	rebase = true
+[core]
+	editor = vim
+	excludesfile = ~/.gitignore_global
+[push]
+	autoSetupRemote = true
+[fetch]
+	prune = true
+[rerere]
+	enabled = true
+[merge]
+	conflictstyle = zdiff3
+[alias]
+	st = status
+	cm = commit -m
+	p = push
+	pf = push --force-with-lease
+	wa = worktree add
+	wl = worktree list
+	wd = worktree remove
+	pretty = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short

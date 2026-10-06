@@ -1,0 +1,22 @@
+#!/bin/bash
+# ============================================
+# dockermon.sh - monitor de Docker en vivo
+# Uso: dockermon.sh   (o el alias dockermon)
+#
+# Que hace:
+#   1. docker events  -> se queda escuchando los eventos de Docker
+#      (start, stop, die, create, destroy)
+#   2. cada vez que ocurre uno de esos eventos: limpia la pantalla (clear)
+#   3. y vuelve a mostrar el estado actual  (docker ps)
+#
+# Resultado: un tablero que se refresca solo cada vez que un
+# contenedor arranca, se detiene o muere.
+# Salir con Ctrl-C.
+# ============================================
+
+docker events --filter event=start --filter event=stop --filter event=die --filter event=create --filter event=destroy |
+while read event
+do
+    clear
+    docker ps
+done

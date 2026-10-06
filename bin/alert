@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# ============================================================================
+# alert - avisa (sonido + banner) cuando termina un proceso largo.
+#
+#   brew update | alert        avisa al terminar
+#   brew update | alert -v     ademas reenvia la salida a la pantalla
+#   brew update ; alert        solo avisa (no lee stdin)
+#   brew update | alert -f     fuerte: musica en bucle + dialogo hasta OK
+#   alert brew update          ejecuta el comando: informa exit code y duracion
+#   alert -m "build listo"     mensaje propio
+# ============================================================================
+set -uo pipefail
+
+# --- 1. Ajustes -------------------------------------------------------------
+# Rutas de los sonidos (afplay) y estado inicial.
+SHORT_RINGTONE=/Users/danielsan/Music/ringtones/notifications/RingtoneNothingPhone1.m4a
+RINGTONE=/Users/danielsan/Music/ringtones/notifications/scribble-NothingRingtone.m4a
+BEEP="${BEEP:-$SHORT_RINGTONE}"   # el pitido corto; se puede sobreescribir: BEEP=... alert
+BEEP_SECS=3                       # cuantos segundos suena el pitido
+TITULO="Alerta..."       # titulo del banner / dialogo
+
+MODO="suave"     # suave (pitido + banner) | fuerte (musica + dialogo)
+VERBOSE=0        # 1 = reenvia la salida del comando a la pantalla
+MENSAJE=""       # mensaje propio (-m); si esta vacio se arma uno automatico
+comando=()       # comando a ejecutar; vacio = modo pipe o solo avisar
+MUSIC_PID=""     # pid del subshell que reproduce la musica en bucle
+
+# --- 2. Ayuda ---------------------------------------------------------------
+ayuda() {
+  cat <<'EOF'
+uso:  alert [opciones] [comando...]
+
+operadores:
+  A ;  B    (secuencia) B corre siempre (al terminar A)
+  A |  B    (pipe)      la salida de A entra a B
+  A && B    (y)         B solo si A salio bien
+  A || B    (o)         B solo si A fallo
+
+formas:
+  brew update | alert        avisa al terminar
+  brew update | alert -v     ademas reenvia la salida a la pantalla
+  brew update ; alert        solo avisa (no lee stdin)
+  brew update | alert -f     fuerte: musica en bucle + dialogo hasta pulsar OK
+  alert brew update          ejecuta el comando: informa exit code y duracion
+  alert ls && lla            Si un comando sale bien el otro se ejecuta.
+  alert -m "build listo"     mensaje propio
+
+opciones:
+  -f, --fuerte    musica en bucle + dialogo bloqueante hasta pulsar OK
+  -s, --suave     pitido corto + banner de macOS (por defecto)
+  -v, --verbose   reenvia la salida del proceso a la pantalla
+  -m, --mensaje   mensaje personalizado
+  -h, --help      esta ayuda
+EOF
+}
+
+# --- 3. Sonidos -------------------------------------------------------------
+# Pitido corto: afplay -t lo corta a los N segundos aunque el audio siga.
+beep() { afplay -t "$BEEP_SECS" "$BEEP" 2>/dev/null; }
+
+# Apaga la musica en bucle (modo fuerte).
+# El bucle corre en un subshell al fondo, asi que matar solo el afplay no basta:
+# el bucle lanzaria otro al instante. Primero se mata el afplay actual y luego
+# el subshell, que ya no relanza nada.
+stop_music() {
+  [[ -z "$MUSIC_PID" ]] && return 0
+  pkill -f "$RINGTONE" 2>/dev/null
+  kill "$MUSIC_PID" 2>/dev/null
+  MUSIC_PID=""
+}
+
+# Pase lo que pase (Ctrl+C, kill, salida normal) la musica no queda sonando.
+trap 'stop_music; exit' INT TERM
+trap 'stop_music' EXIT
+
+# --- 4. Leer opciones -------------------------------------------------------
+# Solo las opciones que van ANTES del comando. En cuanto aparece algo que no
+# empieza por '-', el resto se toma como el comando a ejecutar.
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -f|--fuerte)  MODO="fuerte"; shift ;;
+    -s|--suave)   MODO="suave";  shift ;;
+    -v|--verbose) VERBOSE=1;     shift ;;
+    -m|--mensaje)
+      [[ -n "${2:-}" ]] || { echo "falta el valor de $1" >&2; ayuda >&2; exit 2; }
+      MENSAJE="$2"; shift 2 ;;
+    -h|--help) ayuda; exit 0 ;;
+    --) shift; comando=("$@"); break ;;
+    -*) echo "flag desconocido: $1" >&2; ayuda >&2; exit 2 ;;
+    *)  comando=("$@"); break ;;
+  esac
+done
+
+# --- 5. Ejecutar el comando o leer stdin ------------------------------------
+# Tres casos posibles:
+#   1) hay comando  -> se ejecuta y se guarda su exit code y duracion
+#   2) hay pipe     -> se lee stdin hasta el final (asi se sabe cuando termina)
+#   3) ni uno       -> no hay nada que esperar, solo se avisa
+status=0
+t0=$SECONDS
+
+if [[ ${#comando[@]} -gt 0 ]]; then
+  "${comando[@]}"
+  status=$?
+elif [[ ! -t 0 ]]; then
+  # Hay que consumir stdin SIEMPRE (aunque no se muestre), porque si no se lee,
+  # el script sigue de largo y avisa antes de que el productor termine.
+  if [[ $VERBOSE -eq 1 ]]; then cat; else cat >/dev/null; fi
+fi
+
+seg=$((SECONDS - t0))
+
+# --- 6. Construir el mensaje ------------------------------------------------
+# Si el usuario no dio -m, se arma uno automatico segun el caso.
+if [[ -n "$MENSAJE" ]]; then
+  msg="$MENSAJE"
+elif [[ ${#comando[@]} -gt 0 ]]; then
+  if [[ $status -eq 0 ]]; then
+    msg="«${comando[*]}» termino OK en ${seg}s"
+  else
+    msg="«${comando[*]}» fallo (exit $status) tras ${seg}s"
+  fi
+else
+  msg="Proceso finalizado"
+fi
+
+# --- 7. Avisar --------------------------------------------------------------
+# banner: terminal-notifier es una app registrada, asi que macOS SI muestra su
+# notificacion. osascript se usa solo como respaldo (suele no mostrar nada si
+# Script Editor / Terminal no tienen permiso en Ajustes > Notificaciones).
+banner() {
+  if command -v terminal-notifier >/dev/null 2>&1; then
+    terminal-notifier -title "$TITULO" -message "$1" >/dev/null 2>&1
+  else
+    local m="${1//\"/\\\"}"
+    osascript -e "display notification \"$m\" with title \"$TITULO\"" >/dev/null 2>&1
+  fi
+}
+
+if [[ "$MODO" == "fuerte" ]]; then
+  # Modo fuerte: musica en bucle al fondo + dialogo que espera al OK (o 24 h).
+  (
+    while true; do
+      afplay "$RINGTONE"
+      sleep 1
+    done
+  ) &
+  MUSIC_PID=$!
+  esc="${msg//\"/\\\"}"
+  osascript -e "display dialog \"$esc\" buttons {\"OK\"} default button \"OK\" with title \"$TITULO\" giving up after 360" >/dev/null 2>&1
+  stop_music
+else
+  # Modo suave (por defecto): pitido corto + banner.
+  beep &        # arranca el pitido y sigue de largo, no espera ( el & al final ke dica all shell "ejecuta esto y no esperes, sigue con la linea siguiente")
+  banner "$msg" # sale de inmediato, mientras el pitido suena
+fi
+
+# --- 8. Salir con el exit code del comando ----------------------------------
+# Asi el script se puede encadenar:  alert make && echo ok
+exit "$status"

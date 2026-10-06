@@ -1,0 +1,165 @@
+// Coloque sus atajos de teclado en este archivo para sobrescribir los valores predeterminados
+[
+  // ============================================
+  // 🖥️  INTERFAZ GENERAL
+  // ============================================
+  {
+    // Doble Shift → mostrar/ocultar la barra lateral izquierda (Sidebar)
+    "key": "shift shift",
+    "command": "workbench.action.toggleSidebarVisibility"
+  },
+  {
+    // Doble Ctrl → mostrar/ocultar el terminal integrado
+    "key": "ctrl ctrl",
+    "command": "workbench.action.terminal.toggleTerminal",
+    "when": "terminal.active || terminal.inactive"
+  },
+  // ============================================
+  // 🧭  NAVEGACIÓN DEL CURSOR (estilo Vim)
+  // ============================================
+  {
+    // Cmd + K → cursor ARRIBA
+    // ⚠️ Ojo: pisa los atajos compuestos "Cmd+K Cmd+X"
+    "key": "cmd+k",
+    "command": "cursorUp",
+    "when": "editorTextFocus"
+  },
+  {
+    // Cmd + L → cursor ABAJO
+    // ⚠️ Ojo: pisa "Cmd+L" (seleccionar línea)
+    "key": "cmd+l",
+    "command": "cursorDown",
+    "when": "editorTextFocus"
+  },
+  {
+    // Cmd + J → cursor a la IZQUIERDA
+    "key": "cmd+j",
+    "command": "cursorLeft",
+    "when": "editorTextFocus"
+  },
+  {
+    // Cmd + ; → cursor a la DERECHA
+    "key": "cmd+;",
+    "command": "cursorRight",
+    "when": "editorTextFocus"
+  },
+  {
+    // Cmd + Shift + ; → ir al FINAL de la línea
+    "key": "cmd+shift+;",
+    "command": "cursorEnd",
+    "when": "textInputFocus"
+  },
+  {
+    // Cmd + Shift + J → ir al INICIO de la línea
+    "key": "cmd+shift+j",
+    "command": "cursorHome",
+    "when": "textInputFocus"
+  },
+  // ============================================
+  // 🪟  MANEJO DE EDITORES (pestañas)
+  // ============================================
+  {
+    // Mueve la pestaña actual a la IZQUIERDA (reordena)
+    "key": "ctrl+shift+cmd+[",
+    "command": "moveActiveEditor",
+    "args": {
+      "to": "left"
+    }
+  },
+  {
+    // Mueve la pestaña actual a la DERECHA (reordena)
+    "key": "ctrl+shift+cmd+]",
+    "command": "moveActiveEditor",
+    "args": {
+      "to": "right"
+    }
+  },
+  {
+    // Cambia a la pestaña ANTERIOR
+    "key": "cmd+shift+[",
+    "command": "workbench.action.previousEditor"
+  },
+  {
+    // Cambia a la pestaña SIGUIENTE
+    "key": "cmd+shift+]",
+    "command": "workbench.action.nextEditor"
+  },
+  {
+    // Muestra la lista de TODOS los editores abiertos
+    "key": "ctrl+cmd+p",
+    "command": "workbench.action.showAllEditors"
+  },
+  // ============================================
+  // 🎯  SELECCIÓN INTELIGENTE (Smart Select)
+  // ============================================
+  {
+    // Ctrl + Shift + ; → expande selección por scope
+    // (palabra → expresión → () → función → clase)
+    "key": "ctrl+shift+;",
+    "command": "editor.action.smartSelect.expand",
+    "when": "editorTextFocus"
+  },
+  {
+    // Ctrl + Shift + ' → reduce la selección al scope anterior
+    "key": "ctrl+shift+j",
+    "command": "editor.action.smartSelect.shrink",
+    "when": "editorTextFocus"
+  },
+  {
+    // Libera Ctrl+Shift+Right para que no haga smartSelect
+    // (ahora usas Ctrl+Shift+;)
+    "key": "ctrl+shift+right",
+    "command": "-editor.action.smartSelect.expand",
+    "when": "editorTextFocus"
+  },
+  // ============================================
+  // 💡  AUTOCOMPLETADO (sugerencias)
+  // ============================================
+  {
+    // Tab → selecciona la SIGUIENTE sugerencia
+    "key": "tab",
+    "command": "selectNextSuggestion",
+    "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus"
+  },
+  {
+    // Shift + Tab → selecciona la sugerencia ANTERIOR
+    "key": "shift+tab",
+    "command": "selectPrevSuggestion",
+    "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus"
+  },
+  // ============================================
+  // 🚫  DESACTIVAR ATAJOS POR DEFECTO
+  // ============================================
+  {
+    // Desactiva el atajo por defecto de auto-close-tag
+    "key": "alt+cmd+.",
+    "command": "-auto-close-tag.closeTag"
+  },
+  {
+    // Desactiva el atajo por defecto de "showAllEditors"
+    // (para que no choque con el cambio de app de macOS)
+    "key": "alt+cmd+tab",
+    "command": "-workbench.action.showAllEditors"
+  },
+  // Desplazar vista	(como si fuera con la ruedita del cursor)
+  {
+    "key": "shift+cmd+k",
+    "command": "editorScroll",
+    "args": {
+      "to": "up",
+      "by": "line",
+      "revealCursor": true
+    },
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "shift+cmd+l",
+    "command": "editorScroll",
+    "args": {
+      "to": "down",
+      "by": "line",
+      "revealCursor": true
+    },
+    "when": "editorTextFocus"
+  }
+]

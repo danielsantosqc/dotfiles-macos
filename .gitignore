@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Iconos
+Icon
+._*
+
+# Archivos de papelera
+.Trashes
+.trash
+
+# Volumenes
+.Spotlight-V100
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Carpetas de AppleDouble
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+*.log
+*.bak
+*.bak.*
+
+# Desarrollo (no subir)
+in-test/

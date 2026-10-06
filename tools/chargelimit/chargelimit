@@ -1,0 +1,132 @@
+#!/bin/bash
+set -u
+
+SMC="/usr/local/lib/chargelimit/smc"
+CONF="/usr/local/etc/chargelimit.conf"
+GAP=5
+
+hexval() { printf "%02x000000" "$1"; }
+read_key() { "$SMC" -k "$1" -r 2>/dev/null | grep -oE 'bytes [0-9a-f]+' | awk '{print $2}'; }
+pct_from_hex() { printf "%d" "0x$1"; }
+
+show_power() {
+	local amp mv signed watts
+	amp="$(ioreg -l -w0 -rn AppleSmartBattery 2>/dev/null | tr ',' '\n' | awk -F'=' '/"InstantAmperage"/ {gsub(/ /,"",$2); print $2; exit}')"
+	mv="$(ioreg -l -w0 -rn AppleSmartBattery 2>/dev/null | tr ',' '\n' | awk -F'=' '/"Voltage"/ {gsub(/ /,"",$2); print $2; exit}')"
+	if [[ -z "$amp" ]]; then
+		return
+	fi
+	signed=$(( amp ))
+	watts="$(awk -v a="$signed" -v v="${mv:-0}" 'BEGIN{ printf "%+.1f", a*v/1000000 }')"
+	if (( signed > 0 )); then
+		printf "  Corriente       : %+d mA  (%s W)  cargando\n" "$signed" "$watts"
+	elif (( signed < 0 )); then
+		printf "  Corriente       : %+d mA  (%s W)  descargando\n" "$signed" "$watts"
+	else
+		printf "  Corriente       : 0 mA  (la bateria ni carga ni descarga)\n"
+	fi
+}
+
+need_root() {
+	if [[ "$(id -u)" -ne 0 ]]; then
+		echo "Necesita root: usa  sudo chargelimit $*" >&2
+		exit 1
+	fi
+}
+
+apply_limit() {
+	"$SMC" -k bfF0 -w 00 >/dev/null &&
+		"$SMC" -k bfD0 -w "$(hexval "$1")" >/dev/null &&
+		"$SMC" -k bfE0 -w "$(hexval "$2")" >/dev/null &&
+		"$SMC" -k bfF0 -w 02 >/dev/null
+}
+
+disable_limit() { "$SMC" -k bfF0 -w 00 >/dev/null; }
+
+show_status() {
+	local f0 d0 e0 conf
+	f0="$(read_key bfF0)"
+	d0="$(read_key bfD0)"
+	e0="$(read_key bfE0)"
+	conf="$(cat "$CONF" 2>/dev/null || echo '-')"
+	echo "Ajuste guardado : $conf"
+	if [[ "$f0" == "02" ]]; then
+		echo "Limite activo   : superior $(pct_from_hex "${d0:0:2}")%  /  inferior $(pct_from_hex "${e0:0:2}")%"
+	else
+		echo "Limite          : desactivado -> carga hasta 100%"
+	fi
+	echo
+	pmset -g batt | sed 's/^/  /'
+	show_power
+}
+
+show_help() {
+	cat <<'EOF'
+chargelimit - limita la carga de la bateria a nivel de firmware (SMC)
+
+uso:
+  chargelimit              muestra el estado actual
+  chargelimit status       lo mismo que el anterior
+  sudo chargelimit 80      limita la carga al 80% (se reanuda por debajo de 75%)
+  sudo chargelimit 90 85   rango personalizado: superior 90 / inferior 85
+  sudo chargelimit off     desactiva el limite -> carga hasta 100% (viaje)
+  sudo chargelimit apply   re-aplica el ajuste guardado (lo hace el daemon al arrancar)
+  chargelimit --help       muestra esta ayuda
+
+notas:
+  - consultar el estado no necesita sudo; cambiarlo si
+  - el ajuste se guarda en /usr/local/etc/chargelimit.conf
+    y se re-aplica en cada arranque
+  - el limite debe estar entre 50 y 99; usa 'off' para el 100%
+EOF
+}
+
+cmd="${1:-status}"
+
+case "$cmd" in
+	--help|-h|help)
+		show_help
+		;;
+	status)
+		show_status
+		;;
+	apply)
+		if [[ -r "$CONF" ]]; then
+			read -r a b < "$CONF"
+		else
+			a="off"
+			b=""
+		fi
+		if [[ -z "$a" || "$a" == "off" ]]; then
+			disable_limit || exit 1
+		else
+			apply_limit "$a" "${b:-$(( a - GAP ))}" || exit 1
+		fi
+		;;
+	off|100)
+		need_root "off"
+		disable_limit || { echo "Fallo al desactivar el limite" >&2; exit 1; }
+		echo off > "$CONF"
+		echo "Limite desactivado: la bateria cargara hasta 100%"
+		;;
+	''|*[!0-9]*)
+		show_help >&2
+		exit 1
+		;;
+	*)
+		need_root "$cmd" "${2:-}"
+		upper=$(( 10#$cmd ))
+		lower=$(( 10#${2:-$(( upper - GAP ))} ))
+		if (( upper < 50 || upper > 99 )); then
+			echo "El limite superior debe estar entre 50 y 99 (usa 'off' para cargar al 100%)" >&2
+			exit 1
+		fi
+		if (( lower >= upper )); then
+			echo "El inferior debe ser menor que el superior" >&2
+			exit 1
+		fi
+		apply_limit "$upper" "$lower" || { echo "Fallo al escribir en el SMC" >&2; exit 1; }
+		echo "$upper $lower" > "$CONF"
+		echo "Limite aplicado: superior ${upper}%  /  inferior ${lower}%"
+		;;
+esac
