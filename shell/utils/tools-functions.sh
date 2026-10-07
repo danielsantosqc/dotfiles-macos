@@ -15,13 +15,13 @@ listar() {
   if (( es_largo )); then
     command ls "$@" | awk '
       function repetir(caracter, veces,  i, salida){ salida=""; for(i=0;i<veces;i++) salida=salida caracter; return salida }
-      BEGIN { num_columnas=7; split("Permissions Links Owner Group Size Date Name", titulos, " ") }
+      BEGIN { num_columnas=7; split("Perms Hl Owner Group Size Date Name", titulos, " ") }
       {
         if ($0 ~ /^total /) next
         fila++
         celda[1,fila]=$1; celda[2,fila]=$2; celda[3,fila]=$3; celda[4,fila]=$4; celda[5,fila]=$5
         celda[6,fila]=$6 " " $7 " " $8
-        nombre=$9; for(pos=10;pos<=NF;pos++) nombre=nombre "" $pos
+        nombre=$9; for(pos=10;pos<=NF;pos++) nombre=nombre " " $pos
         celda[7,fila]=nombre
         for(col=1;col<=num_columnas;col++) if(length(celda[col,fila])>anchos[col]) anchos[col]=length(celda[col,fila])
       }
